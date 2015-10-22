@@ -1,0 +1,35 @@
+server:
+  applicationConnectors:
+    - type: http
+      port: 2000
+      idleTimeout: 60s
+      acceptorThreads: 6
+      acceptQueueSize: 200
+      soLingerTime: 0s
+  adminConnectors:
+    - type: http
+      port: 2100
+      idleTimeout: 60s
+      acceptorThreads: 2
+  maxThreads: 256
+  rootPath: "/*"
+  shutdownGracePeriod: 15s
+  requestLog:
+    timeZone: UTC
+    appenders:
+      - type: console
+      - type: file
+        logFormat: '%h %l %u [%t] "%r" %s %b %D "%i{Referer}" "%i{User-Agent}"'
+        currentLogFilename: ./logs/jetty-requests.log
+        archive: true
+        archivedLogFilenamePattern: ./logs/jetty-requests-%d.log.gz
+        archivedFileCount: 5
+
+logging:
+  # The default level of all loggers. Can be OFF, ERROR, WARN, INFO, DEBUG, TRACE, or ALL.
+  level: INFO
+
+  # Logger-specific levels.
+  loggers:
+    io.yammer.dropwizard: INFO
+    org.eclipse.jetty.server: INFO

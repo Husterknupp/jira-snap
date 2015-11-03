@@ -5,60 +5,35 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.bschandera</groupId>
-    <artifactId>jira-version-cleaner</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
-
-    <name>${project.artifactId}</name>
-    <description>Filter unreleased Jira versions by your component and release them faster than Jira does.</description>
-
+    <artifactId>jira-rest-client-standalone</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <name>jira-rest-client-standalone</name>
     <properties>
-        <jar.name>jira-version-cleaner</jar.name>
-        <main.class>de.bschandera.jiraversioncleaner.JiraVersionCleaner</main.class>
+        <jar.name>jira-rest-client-standalone</jar.name>
+        <main.class>de.bschandera.Main</main.class>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <dropwizard.version>0.8.2</dropwizard.version>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.4</version>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard</groupId>
-            <artifactId>dropwizard-core</artifactId>
-            <version>${dropwizard.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>commons-lang3</artifactId>
-                    <groupId>org.apache.commons</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard</groupId>
-            <artifactId>dropwizard-views</artifactId>
-            <version>${dropwizard.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard</groupId>
-            <artifactId>dropwizard-views-freemarker</artifactId>
-            <version>${dropwizard.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard</groupId>
-            <artifactId>dropwizard-metrics</artifactId>
-            <version>${dropwizard.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard</groupId>
-            <artifactId>dropwizard-assets</artifactId>
-            <version>${dropwizard.version}</version>
-        </dependency>
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.7</version>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.jira</groupId>
+            <artifactId>jira-rest-java-client</artifactId>
+            <version>1.1-m02</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>13.0.1</version>
         </dependency>
     </dependencies>
 
@@ -144,14 +119,6 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                     <resource>META-INF/cxf/bus-extensions.txt</resource>
-                                </transformer>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                    <resource>spreadshirt.properties</resource>
-                                </transformer>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                    <resource>spreadshirt_default.properties</resource>
                                 </transformer>
                             </transformers>
                             <artifactSet>

@@ -1,11 +1,12 @@
-package de.bschandera;
+package de.bschandera.jiraversioncleaner.core;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class Job {
     private String status;
     private String type;
-    private String path;
     private List<String> componentsWanted;
     private List<Version> updatedVersions;
 
@@ -25,14 +26,6 @@ public class Job {
         this.type = type;
     }
 
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
     public List<String> getComponentsWanted() {
         return componentsWanted;
     }
@@ -47,5 +40,26 @@ public class Job {
 
     public void setUpdatedVersions(List<Version> updatedVersions) {
         this.updatedVersions = updatedVersions;
+    }
+
+    public static Job openPollingJob(List<String> componentsWanted) {
+        Job job = new Job();
+        job.setStatus("open");
+        job.setType("poll");
+        job.setComponentsWanted(componentsWanted);
+        return job;
+    }
+
+    public static Job openUpdateJob(Version firstVersion, Version... moreVersions) {
+        Job job = new Job();
+        job.setStatus("open");
+        job.setType("update");
+        if (moreVersions.length != 0) {
+            moreVersions[moreVersions.length] = firstVersion;
+            job.setUpdatedVersions(Arrays.asList(moreVersions));
+        } else {
+            job.setUpdatedVersions(Collections.singletonList(firstVersion));
+        }
+        return job;
     }
 }

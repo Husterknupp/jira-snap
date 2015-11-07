@@ -77,6 +77,7 @@ public class Main {
             checkForOpenJob("update").ifPresent(job -> {
                 try {
                     job.getUpdatedVersions().stream().forEach(Main::releaseVersion);
+                    updateJobState(job, "done");
                 } catch (Exception e) {
                     System.out.println("[ERROR] " + e.getMessage());
                     updateJobState(job, "failed");

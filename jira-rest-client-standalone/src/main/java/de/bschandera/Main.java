@@ -3,7 +3,6 @@ package de.bschandera;
 import com.atlassian.jira.rest.client.JiraRestClient;
 import com.atlassian.jira.rest.client.NullProgressMonitor;
 import com.atlassian.jira.rest.client.ProjectRestClient;
-import com.atlassian.jira.rest.client.RestClientException;
 import com.atlassian.jira.rest.client.domain.Project;
 import com.atlassian.jira.rest.client.domain.input.VersionInput;
 import com.atlassian.jira.rest.client.internal.jersey.JerseyJiraRestClientFactory;
@@ -21,8 +20,6 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Type;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,19 +31,31 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 public class Main {
-    private static final URI JIRA_URI;
     private static final JiraRestClient REST_CLIENT;
     private static final Gson GSON = new Gson();
-    private static final Path PROJECT_ROOT = Paths.get("."); // todo param
+    private static final Path ROOT_PATH = Paths.get(".");
     private static final Path VERSIONS_PATH = Paths.get("versions.json");
+    private static final Config CONFIG;
 
     static {
         try {
-            JIRA_URI = new URI("https://jira.spreadomat.net/"); // todo param
-        } catch (URISyntaxException e) {
+            CONFIG = readConfigFile("config.json");
+            REST_CLIENT = new JerseyJiraRestClientFactory()
+                    .createWithBasicHttpAuthentication(CONFIG.getJiraUrl(), CONFIG.getUsername(), CONFIG.getPassword());
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        REST_CLIENT = new JerseyJiraRestClientFactory().createWithBasicHttpAuthentication(JIRA_URI, "bens", ""); // todo param
+    }
+
+    private static Config readConfigFile(String filePath) throws IOException {
+        Config config;
+        try (BufferedReader reader = Files.newBufferedReader(ROOT_PATH.resolve(filePath))) {
+            config = GSON.fromJson(reader, Config.class);
+        } catch (JsonSyntaxException e) {
+            System.out.println("[ERROR] json syntax problem in file " + filePath + " " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+        return config;
     }
 
     public static void main(String[] args) throws InterruptedException, IOException {
@@ -68,7 +77,7 @@ public class Main {
             checkForOpenJob("update").ifPresent(job -> {
                 try {
                     job.getUpdatedVersions().stream().forEach(Main::releaseVersion);
-                }catch (Exception e) {
+                } catch (Exception e) {
                     System.out.println("[ERROR] " + e.getMessage());
                     updateJobState(job, "failed");
                 }
@@ -77,7 +86,7 @@ public class Main {
     }
 
     private static Optional<Job> checkForOpenJob(String jobType) throws IOException {
-        DirectoryStream<Path> jobFilesStream = Files.newDirectoryStream(PROJECT_ROOT.resolve("jobs"));
+        DirectoryStream<Path> jobFilesStream = Files.newDirectoryStream(ROOT_PATH.resolve("jobs"));
         Optional<Job> result = Optional.empty();
         for (Path aJobFilesStream : jobFilesStream) {
             Job job;

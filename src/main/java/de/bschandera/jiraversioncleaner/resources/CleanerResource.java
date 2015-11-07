@@ -51,6 +51,10 @@ public class CleanerResource {
 
         if (pollJob.getStatus().equals("done")) {
             System.out.println("[INFO] polling job was done");
+            if (!Files.exists(VERSIONS_FILE_PATH)) {
+                return new CleanerView(configuredComponents, Collections.emptyMap());
+            }
+
             List<Version> pollingResult = readVersionsFromFile();
             return new CleanerView(configuredComponents, configuredComponents.stream().collect(Collectors
                     .toMap(Function.<String>identity(),

@@ -93,6 +93,9 @@ public class Main {
             Job job;
             try (BufferedReader reader = Files.newBufferedReader(aJobFilesStream)) {
                 job = GSON.fromJson(reader, Job.class);
+                if (job == null) {
+                    continue;
+                }
             } catch (JsonSyntaxException e) {
                 System.out.println("[ERROR] json syntax problem in file " + aJobFilesStream.toString() + " " + e.getMessage());
                 throw new RuntimeException(e);
@@ -150,7 +153,7 @@ public class Main {
                 BufferedWriter writer = Files.newBufferedWriter(VERSIONS_PATH);
                 GSON.toJson(versions, srcTypeVersionList, writer);
                 writer.close();
-                System.out.println("[INFO] Found " + versions.size() + " unreleased versions. Find them in " + VERSIONS_PATH);
+                System.out.println("[INFO] Found " + versions.size() + " unreleased versions. Put them in " + VERSIONS_PATH);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -159,9 +162,9 @@ public class Main {
 
     private static void releaseVersion(Version version) {
         boolean released = true;
-        VersionInput versi0n = VersionInput.create("DEV", null, null, new DateTime(), version.isArchived(), released);
+        VersionInput versi0n = VersionInput.create("DEV", null, null, new DateTime(version.getReleaseDate()), version.isArchived(), released);
         REST_CLIENT.getVersionRestClient().updateVersion(version.getSelf(), versi0n, new NullProgressMonitor());
-        System.out.println("[INFO] " + version.getSelf() + " released");
+        System.out.println("[INFO] Released version " + version.getSelf());
     }
 
     private static void printNoOfOpenFiles() {

@@ -19,7 +19,7 @@ public class JiraVersionCleaner extends Application<JiraVersionCleanerConfigurat
 
     @Override
     public void run(JiraVersionCleanerConfiguration configuration, Environment environment) throws Exception {
-        environment.jersey().register(new CleanerResource());
+        environment.jersey().register(new CleanerResource(configuration.getComponentsToPollFor()));
     }
 
     @Override

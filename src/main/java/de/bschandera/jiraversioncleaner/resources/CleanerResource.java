@@ -19,7 +19,6 @@ import java.io.Writer;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -31,12 +30,17 @@ public class CleanerResource {
     private static final java.nio.file.Path JOBS_PATH = Paths.get("./jobs");
     private static final java.nio.file.Path VERSIONS_FILE_PATH = Paths.get("versions.json");
 
+    private final List<String> componentsToPollFor;
+
+    public CleanerResource(List<String> componentsToPollFor) {
+        this.componentsToPollFor = componentsToPollFor;
+    }
+
     @GET
     public CleanerView getCleanerView(@Context HttpServletRequest request) throws InterruptedException, IOException {
         java.nio.file.Path jobFileName = JOBS_PATH.resolve(new Date().getTime() + ".json");
-        List<String> configuredComponents = Arrays.asList("component-a", "component-b"); // todo configure
         Writer writer = java.nio.file.Files.newBufferedWriter(jobFileName);
-        new Gson().toJson(Job.openPollingJob(configuredComponents), writer);
+        new Gson().toJson(Job.openPollingJob(componentsToPollFor), writer);
         writer.close();
 
         Job pollJob;
@@ -52,16 +56,16 @@ public class CleanerResource {
         if (pollJob.getStatus().equals("done")) {
             System.out.println("[INFO] polling job was done");
             if (!Files.exists(VERSIONS_FILE_PATH)) {
-                return new CleanerView(configuredComponents, Collections.emptyMap());
+                return new CleanerView(componentsToPollFor, Collections.emptyMap());
             }
 
             List<Version> pollingResult = readVersionsFromFile();
-            return new CleanerView(configuredComponents, configuredComponents.stream().collect(Collectors
+            return new CleanerView(componentsToPollFor, componentsToPollFor.stream().collect(Collectors
                     .toMap(Function.<String>identity(),
                             component -> findVersionsForComponent(component, pollingResult))));
         } else {
             System.out.println("[WARN] could not find polling job done: " + jobFileName);
-            return new CleanerView(configuredComponents, Collections.emptyMap());
+            return new CleanerView(componentsToPollFor, Collections.emptyMap());
         }
     }
 

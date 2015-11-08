@@ -33,3 +33,7 @@ logging:
   loggers:
     io.yammer.dropwizard: INFO
     org.eclipse.jetty.server: INFO
+
+componentsToPollFor:
+  - component-a
+  - component-b

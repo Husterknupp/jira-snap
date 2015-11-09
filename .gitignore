@@ -1,12 +1,14 @@
+# java, maven and ide
 *.idea
 *.iml
 *.class
 *.jar
 target/
+dependency-reduced-pom.xml
+
+# project specific
+jobs/
+config.json
+versions.json
 *.log
 *.log.gz
-dependency-reduced-pom.xml
-node_modules/
-src/main/resources/webApp/bower_components/
-delivery-timer-local.yaml
-jobs/

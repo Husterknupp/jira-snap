@@ -31,34 +31,14 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 public class Main {
-    private static final JiraRestClient REST_CLIENT;
     private static final Gson GSON = new Gson();
     private static final Path ROOT_PATH = Paths.get(".");
     private static final Path VERSIONS_PATH = Paths.get("versions.json");
-    private static final Config CONFIG;
 
-    static {
-        try {
-            CONFIG = readConfigFile("config.json");
-            REST_CLIENT = new JerseyJiraRestClientFactory()
-                    .createWithBasicHttpAuthentication(CONFIG.getJiraUrl(), CONFIG.getUsername(), CONFIG.getPassword());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static Config readConfigFile(String filePath) throws IOException {
-        Config config;
-        try (BufferedReader reader = Files.newBufferedReader(ROOT_PATH.resolve(filePath))) {
-            config = GSON.fromJson(reader, Config.class);
-        } catch (JsonSyntaxException e) {
-            System.out.println("[ERROR] json syntax problem in file " + filePath + " " + e.getMessage());
-            throw new RuntimeException(e);
-        }
-        return config;
-    }
+    private static JiraRestClient restClient;
 
     public static void main(String[] args) throws InterruptedException, IOException {
+        restClient = configureRestClient();
         for (; true; Thread.sleep(100)) {
             checkForOpenJob("poll").map(job -> {
                 printNoOfOpenFiles();
@@ -86,7 +66,30 @@ public class Main {
         }
     }
 
-    private static Optional<Job> checkForOpenJob(String jobType) throws IOException {
+    private static JiraRestClient configureRestClient() {
+        JiraRestClient restClient;
+        try {
+            Config config = readConfigFile("config.json");
+            restClient = new JerseyJiraRestClientFactory()
+                    .createWithBasicHttpAuthentication(config.getJiraUrl(), config.getUsername(), config.getPassword());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return restClient;
+    }
+
+    private static Config readConfigFile(String filePath) throws IOException {
+        Config config;
+        try (BufferedReader reader = Files.newBufferedReader(ROOT_PATH.resolve(filePath))) {
+            config = GSON.fromJson(reader, Config.class);
+        } catch (JsonSyntaxException e) {
+            System.out.println("[ERROR] json syntax problem in file " + filePath + " " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+        return config;
+    }
+
+    static Optional<Job> checkForOpenJob(String jobType) throws IOException {
         DirectoryStream<Path> jobFilesStream = Files.newDirectoryStream(ROOT_PATH.resolve("jobs"));
         Optional<Job> result = Optional.empty();
         for (Path aJobFilesStream : jobFilesStream) {
@@ -98,7 +101,7 @@ public class Main {
                 }
             } catch (JsonSyntaxException e) {
                 System.out.println("[ERROR] json syntax problem in file " + aJobFilesStream.toString() + " " + e.getMessage());
-                throw new RuntimeException(e);
+                throw e;
             }
             if (job.getStatus().equalsIgnoreCase("open") && job.getType().equalsIgnoreCase(jobType)) {
                 job.setPath(aJobFilesStream.toString());
@@ -112,7 +115,7 @@ public class Main {
     }
 
     private static List<Version> getUnreleasedVersions(List<String> components) {
-        ProjectRestClient projects = REST_CLIENT.getProjectClient();
+        ProjectRestClient projects = restClient.getProjectClient();
         Project dev = projects.getProject("DEV", new NullProgressMonitor());
         List<Version> ourUnreleasedVersions = new ArrayList<>();
         Lists.newArrayList(dev.getVersions()).stream()
@@ -163,7 +166,7 @@ public class Main {
     private static void releaseVersion(Version version) {
         boolean released = true;
         VersionInput versi0n = VersionInput.create("DEV", null, null, new DateTime(version.getReleaseDate()), version.isArchived(), released);
-        REST_CLIENT.getVersionRestClient().updateVersion(version.getSelf(), versi0n, new NullProgressMonitor());
+        restClient.getVersionRestClient().updateVersion(version.getSelf(), versi0n, new NullProgressMonitor());
         System.out.println("[INFO] Released version " + version.getSelf());
     }
 

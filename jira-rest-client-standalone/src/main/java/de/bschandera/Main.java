@@ -132,7 +132,7 @@ public class Main {
         return Iterables.tryFind(components, component -> version.getName().startsWith(component)).isPresent();
     }
 
-    private static void updateJobState(Job job, String newStatus) {
+    static void updateJobState(Job job, String newStatus) {
         try {
             job.setStatus(newStatus);
             BufferedWriter writer = Files.newBufferedWriter(Paths.get(job.getPath()));

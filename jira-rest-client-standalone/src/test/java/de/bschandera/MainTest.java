@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -122,5 +123,19 @@ public class MainTest {
             Files.delete(JOBS_PATH.resolve("poll.json"));
             throw e;
         }
+    }
+
+    @Test
+    public void updateJobState() throws IOException {
+        Job job = new Job();
+        job.setPath("jobs/update-my-status");
+
+        Main.updateJobState(job, "new status");
+
+        Optional<String> updatedJob = Files.lines(JOBS_PATH.resolve("update-my-status"))
+                .filter(line -> line.contains("new status"))
+                .findFirst();
+        Files.delete(JOBS_PATH.resolve("update-my-status"));
+        assertThat(updatedJob.isPresent(), is(true));
     }
 }

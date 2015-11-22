@@ -17,6 +17,7 @@ import org.joda.time.DateTime;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Type;
@@ -73,7 +74,7 @@ public class Main {
             restClient = new JerseyJiraRestClientFactory()
                     .createWithBasicHttpAuthentication(config.getJiraUrl(), config.getUsername(), config.getPassword());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
         return restClient;
     }

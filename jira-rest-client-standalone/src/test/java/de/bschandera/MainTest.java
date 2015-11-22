@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -138,5 +139,10 @@ public class MainTest {
                 .findFirst();
         Files.delete(JOBS_PATH.resolve("update-my-status"));
         assertThat(updatedJob.isPresent(), is(true));
+    }
+
+    @Test(expected = UncheckedIOException.class)
+    public void mainIntegrationTestNoConfigFile() throws IOException, InterruptedException {
+        Main.main(new String[]{});
     }
 }

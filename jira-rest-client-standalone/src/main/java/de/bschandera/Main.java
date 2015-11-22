@@ -45,11 +45,11 @@ public class Main {
                 System.out.println("[INFO] Get versions for " + job.getComponentsWanted());
                 try {
                     List<Version> result = getUnreleasedVersions(job.getComponentsWanted());
-                    updateJobState(job, "done");
+                    saveAndUpdateJobState(job, "done");
                     return result;
                 } catch (Exception e) {
                     System.out.println("[ERROR] " + e.getMessage());
-                    updateJobState(job, "failed");
+                    saveAndUpdateJobState(job, "failed");
                     return Collections.<Version>emptyList();
                 }
             }).ifPresent(writeToFile());
@@ -57,10 +57,10 @@ public class Main {
             checkForOpenJob("update").ifPresent(job -> {
                 try {
                     job.getUpdatedVersions().stream().forEach(Main::releaseVersion);
-                    updateJobState(job, "done");
+                    saveAndUpdateJobState(job, "done");
                 } catch (Exception e) {
                     System.out.println("[ERROR] " + e.getMessage());
-                    updateJobState(job, "failed");
+                    saveAndUpdateJobState(job, "failed");
                 }
             });
         }
@@ -132,7 +132,7 @@ public class Main {
         return Iterables.tryFind(components, component -> version.getName().startsWith(component)).isPresent();
     }
 
-    static void updateJobState(Job job, String newStatus) {
+    static void saveAndUpdateJobState(Job job, String newStatus) {
         try {
             job.setStatus(newStatus);
             BufferedWriter writer = Files.newBufferedWriter(Paths.get(job.getPath()));

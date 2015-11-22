@@ -128,9 +128,10 @@ public class MainTest {
     @Test
     public void updateJobState() throws IOException {
         Job job = new Job();
+        job.setStatus("old status");
         job.setPath("jobs/update-my-status");
 
-        Main.updateJobState(job, "new status");
+        Main.saveAndUpdateJobState(job, "new status");
 
         Optional<String> updatedJob = Files.lines(JOBS_PATH.resolve("update-my-status"))
                 .filter(line -> line.contains("new status"))

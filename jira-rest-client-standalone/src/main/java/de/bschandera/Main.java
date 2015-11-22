@@ -40,31 +40,45 @@ public class Main {
 
     public static void main(String[] args) throws InterruptedException, IOException {
         restClient = configureRestClient();
-        for (; true; Thread.sleep(100)) {
-            checkForOpenJob("poll").map(job -> {
-                printNoOfOpenFiles();
-                System.out.println("[INFO] Get versions for " + job.getComponentsWanted());
-                try {
-                    List<Version> result = getUnreleasedVersions(job.getComponentsWanted());
-                    saveAndUpdateJobState(job, "done");
-                    return result;
-                } catch (Exception e) {
-                    System.out.println("[ERROR] " + e.getMessage());
-                    saveAndUpdateJobState(job, "failed");
-                    return Collections.<Version>emptyList();
-                }
-            }).ifPresent(writeToFile());
-
-            checkForOpenJob("update").ifPresent(job -> {
-                try {
-                    job.getUpdatedVersions().stream().forEach(Main::releaseVersion);
-                    saveAndUpdateJobState(job, "done");
-                } catch (Exception e) {
-                    System.out.println("[ERROR] " + e.getMessage());
-                    saveAndUpdateJobState(job, "failed");
-                }
-            });
+        if (args.length != 0) {
+            System.out.println("[INFO] Test mode. I will execute only one of each job if present.");
+            System.out.println("[INFO] Provide no arguments to run in normal mode.");
+            pollIfOpen();
+            updateIfOpen();
+            return;
         }
+        for (; true; Thread.sleep(100)) {
+            pollIfOpen();
+            updateIfOpen();
+        }
+    }
+
+    private static void updateIfOpen() throws IOException {
+        checkForOpenJob("update").ifPresent(job -> {
+            try {
+                job.getUpdatedVersions().stream().forEach(Main::releaseVersion);
+                saveAndUpdateJobState(job, "done");
+            } catch (Exception e) {
+                System.out.println("[ERROR] " + e.getMessage());
+                saveAndUpdateJobState(job, "failed");
+            }
+        });
+    }
+
+    private static void pollIfOpen() throws IOException {
+        checkForOpenJob("poll").map(job -> {
+            printNoOfOpenFiles();
+            System.out.println("[INFO] Get versions for " + job.getComponentsWanted());
+            try {
+                List<Version> result = getUnreleasedVersions(job.getComponentsWanted());
+                saveAndUpdateJobState(job, "done");
+                return result;
+            } catch (Exception e) {
+                System.out.println("[ERROR] " + e.getMessage());
+                saveAndUpdateJobState(job, "failed");
+                return Collections.<Version>emptyList();
+            }
+        }).ifPresent(writeToFile());
     }
 
     private static JiraRestClient configureRestClient() {

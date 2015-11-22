@@ -17,6 +17,7 @@ import static org.hamcrest.Matchers.is;
 
 public class MainTest {
     private static final Path JOBS_PATH = Paths.get("./jobs");
+    private static final Path ROOT_PATH = Paths.get(".");
 
     @Test
     public void testCheckForOpenJobPresent() throws IOException {
@@ -144,5 +145,22 @@ public class MainTest {
     @Test(expected = UncheckedIOException.class)
     public void mainIntegrationTestNoConfigFile() throws IOException, InterruptedException {
         Main.main(new String[]{});
+    }
+
+    @Test
+    public void mainIntegrationTestNoJobFile() throws IOException, InterruptedException {
+        BufferedWriter writer = Files.newBufferedWriter(ROOT_PATH.resolve("config.json"));
+        writer.append("{\n" +
+                "  \"jiraUrl\": \"http://funny.url\",\n" +
+                "  \"username\": \"user\",\n" +
+                "  \"password\": \"password\"\n" +
+                "}");
+        writer.close();
+        assertThat(Files.list(JOBS_PATH).count(), is(0l));
+
+        Main.main(new String[]{"anyString"});
+
+        assertThat(Files.list(JOBS_PATH).count(), is(0l));
+        Files.delete(ROOT_PATH.resolve("config.json"));
     }
 }

@@ -56,8 +56,6 @@ public class MainTest {
         writer.close();
 
         assertThat(Main.checkForOpenJob("poll").isPresent(), is(true));
-
-        Files.delete(JOBS_PATH.resolve("poll.json"));
     }
 
     @Test
@@ -71,13 +69,10 @@ public class MainTest {
         writer.close();
 
         assertThat(Main.checkForOpenJob("poll").isPresent(), is(false));
-
-        Files.delete(JOBS_PATH.resolve("poll.json"));
     }
 
     @Test
     public void testCheckForOpenJobTypeBad() throws IOException {
-        assertThat(Main.checkForOpenJob("poll").isPresent(), is(false));
         Job job = new Job();
         job.setType("bad type");
         job.setStatus("open");
@@ -86,25 +81,17 @@ public class MainTest {
         writer.close();
 
         assertThat(Main.checkForOpenJob("poll").isPresent(), is(false));
-
-        Files.delete(JOBS_PATH.resolve("poll.json"));
     }
 
     @Test(expected = NullPointerException.class)
     public void testCheckForOpenJobTypeNull() throws IOException {
-        assertThat(Main.checkForOpenJob("poll").isPresent(), is(false));
         Job job = new Job();
         job.setStatus("open");
         BufferedWriter writer = Files.newBufferedWriter(JOBS_PATH.resolve("poll.json"));
         new Gson().toJson(job, writer);
         writer.close();
 
-        try {
-            assertThat(Main.checkForOpenJob("poll").isPresent(), is(false));
-        } catch (NullPointerException e) {
-            Files.delete(JOBS_PATH.resolve("poll.json"));
-            throw e;
-        }
+        assertThat(Main.checkForOpenJob("poll").isPresent(), is(false));
     }
 
     @Test
@@ -118,8 +105,6 @@ public class MainTest {
         writer.close();
 
         assertThat(Main.checkForOpenJob("poll").isPresent(), is(false));
-
-        Files.delete(JOBS_PATH.resolve("poll.json"));
     }
 
     @Test(expected = NullPointerException.class)
@@ -131,12 +116,7 @@ public class MainTest {
         new Gson().toJson(job, writer);
         writer.close();
 
-        try {
-            assertThat(Main.checkForOpenJob("poll").isPresent(), is(false));
-        } catch (NullPointerException e) {
-            Files.delete(JOBS_PATH.resolve("poll.json"));
-            throw e;
-        }
+        assertThat(Main.checkForOpenJob("poll").isPresent(), is(false));
     }
 
     @Test(expected = JsonSyntaxException.class)
@@ -146,12 +126,7 @@ public class MainTest {
         writer.append("trarala no valid json luluu");
         writer.close();
 
-        try {
-            assertThat(Main.checkForOpenJob("poll").isPresent(), is(false));
-        } catch (Exception e) {
-            Files.delete(JOBS_PATH.resolve("poll.json"));
-            throw e;
-        }
+        assertThat(Main.checkForOpenJob("poll").isPresent(), is(false));
     }
 
     @Test
@@ -165,7 +140,6 @@ public class MainTest {
         Optional<String> updatedJob = Files.lines(JOBS_PATH.resolve("update-my-status"))
                 .filter(line -> line.contains("new status"))
                 .findFirst();
-        Files.delete(JOBS_PATH.resolve("update-my-status"));
         assertThat(updatedJob.isPresent(), is(true));
     }
 

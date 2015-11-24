@@ -39,7 +39,9 @@ public class Main {
     private static JiraRestClient restClient;
 
     public static void main(String[] args) throws InterruptedException, IOException {
-        restClient = configureRestClient();
+        if (restClient == null) {
+            restClient = configureRestClient();
+        }
         if (args.length != 0) {
             System.out.println("[INFO] Test mode. I will execute only one of each job if present.");
             System.out.println("[INFO] Provide no arguments to run in normal mode.");
@@ -190,5 +192,9 @@ public class Main {
         if (os instanceof UnixOperatingSystemMXBean) {
             System.out.println("[DEBUG] Number of open file descriptors: " + ((UnixOperatingSystemMXBean) os).getOpenFileDescriptorCount());
         }
+    }
+
+    static void setJiraClient(JiraRestClient client) {
+        restClient = client;
     }
 }

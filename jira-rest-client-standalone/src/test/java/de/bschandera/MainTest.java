@@ -2,13 +2,17 @@ package de.bschandera;
 
 import com.atlassian.jira.rest.client.JiraRestClient;
 import com.atlassian.jira.rest.client.ProjectRestClient;
+import com.atlassian.jira.rest.client.VersionRestClient;
 import com.atlassian.jira.rest.client.domain.Project;
 import com.atlassian.jira.rest.client.domain.Version;
+import com.atlassian.jira.rest.client.domain.input.VersionInput;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 
 import java.io.BufferedWriter;
@@ -21,12 +25,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 
 public class MainTest {
@@ -206,5 +213,49 @@ public class MainTest {
                 .orElseGet(() -> "");
         assertThat(file, stringContainsInOrder(Arrays.asList("jira.company.net", "component-name-1.0.0", "\"isReleased\":false")));
         assertThat(file, not(containsString("description")));
+    }
+
+    @Test
+    public void updateIntegrationTest() throws IOException, InterruptedException {
+        // place an open update job
+        assertThat(Files.exists(ROOT_PATH.resolve("versions.json")), is(false));
+        assertThat(Files.list(JOBS_PATH).count(), is(0l));
+        Job job = new Job();
+        job.setType("update");
+        job.setStatus("open");
+        de.bschandera.Version version = new de.bschandera.Version();
+        version.setIsReleased(true);
+        version.setName("version-name-1.0.0");
+        Date releaseDate = new Date();
+        version.setReleaseDate(releaseDate);
+        version.setSelf(URI.create("http://jira.net/my-cool-version"));
+        job.setUpdatedVersions(Collections.singletonList(version));
+        BufferedWriter writer = Files.newBufferedWriter(JOBS_PATH.resolve("update.json"));
+        new Gson().toJson(job, writer);
+        writer.close();
+
+        VersionRestClient versionClient = Mockito.mock(VersionRestClient.class);
+        JiraRestClient jiraClient = Mockito.mock(JiraRestClient.class);
+        Mockito.when(jiraClient.getVersionRestClient()).thenReturn(versionClient);
+        Main.setJiraClient(jiraClient);
+
+        Main.main(new String[]{"one run"});
+        ArgumentCaptor<VersionInput> argumentCaptor = ArgumentCaptor.forClass(VersionInput.class);
+        Mockito.verify(versionClient)
+                .updateVersion(Matchers.eq(URI.create("http://jira.net/my-cool-version")), argumentCaptor.capture(), Mockito.any());
+
+        assertThat(Files.list(JOBS_PATH).count(), is(1l));
+        String jobFile = Files.lines(JOBS_PATH.resolve("update.json"))
+                .reduce((left, right) -> String.join("\n", left, right))
+                .orElseGet(() -> "");
+        assertThat(jobFile, containsString("\"status\":\"done\""));
+
+        VersionInput updatedVersion = argumentCaptor.getValue();
+        assertThat(updatedVersion.getProjectKey(), equalTo("DEV"));
+        assertThat(updatedVersion.getReleaseDate().toDate().toString(), equalTo(releaseDate.toString())); // because that's how its serialized
+        assertThat(updatedVersion.isReleased(), is(true));
+        assertThat(updatedVersion.isArchived(), is(false));
+        assertThat(updatedVersion.getDescription(), nullValue());
+        assertThat(updatedVersion.getName(), nullValue());
     }
 }

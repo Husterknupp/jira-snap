@@ -16,6 +16,12 @@
 </div>
 <br>
 
+<#if !(message == "")>
+    <div>
+        ${message}<br/><br/>
+    </div>
+</#if>
+
 <div>
 <#list versions?keys as component>
     <b>${component}</b>

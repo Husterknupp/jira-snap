@@ -88,7 +88,7 @@ public class CleanerResource {
             releaseDate = DateFormat.getInstance().parse(releaseDateString);
         } catch (ParseException e) {
             System.out.println("[ERROR] " + e.getMessage());
-            return getCleanerView();
+            return getCleanerView().withMessage("Nope. Your date format is bad.");
         }
 
         Optional<Version> version = readVersionsFromFile().stream()
@@ -96,7 +96,7 @@ public class CleanerResource {
                 .findFirst();
         if (!version.isPresent()) {
             System.out.println("[WARN] Could not find version of name '" + versionName + "'");
-            return getCleanerView();
+            return getCleanerView().withMessage("Ain't no version of this name, dude.");
         }
 
         java.nio.file.Path jobFileName = JOBS_PATH.resolve(new Date().getTime() + ".json");
@@ -119,7 +119,7 @@ public class CleanerResource {
         }
         System.out.println("[INFO] created job for version update of " + versionName);
         System.out.println("[INFO] job name" + jobFileName);
-        return getCleanerView();
+        return getCleanerView().withMessage("Aww yiss!. Please update view.");
     }
 
 }

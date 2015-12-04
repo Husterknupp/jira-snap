@@ -9,7 +9,6 @@ import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Writer;
@@ -81,16 +80,15 @@ public class CleanerResource {
                 .filter(version -> version.getName().startsWith(component)).collect(Collectors.toList());
     }
 
-    @Path("{versionName}")
     @POST
-    public SimpleBackButtonView updateVersion(@PathParam("versionName") String versionName,
-                                              @FormParam("releaseDate") String releaseDateString) throws IOException, InterruptedException {
+    public CleanerView updateVersion(@FormParam("versionName") String versionName,
+                                     @FormParam("releaseDate") String releaseDateString) throws IOException, InterruptedException {
         final Date releaseDate;
         try {
             releaseDate = DateFormat.getInstance().parse(releaseDateString);
         } catch (ParseException e) {
             System.out.println("[ERROR] " + e.getMessage());
-            return new SimpleBackButtonView();
+            return getCleanerView();
         }
 
         Optional<Version> version = readVersionsFromFile().stream()
@@ -98,7 +96,7 @@ public class CleanerResource {
                 .findFirst();
         if (!version.isPresent()) {
             System.out.println("[WARN] Could not find version of name '" + versionName + "'");
-            return new SimpleBackButtonView();
+            return getCleanerView();
         }
 
         java.nio.file.Path jobFileName = JOBS_PATH.resolve(new Date().getTime() + ".json");
@@ -121,7 +119,7 @@ public class CleanerResource {
         }
         System.out.println("[INFO] created job for version update of " + versionName);
         System.out.println("[INFO] job name" + jobFileName);
-        return new SimpleBackButtonView();
+        return getCleanerView();
     }
 
 }

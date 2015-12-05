@@ -16,6 +16,11 @@
 </div>
 <br>
 
+<form method="POST" action="/versions">
+        <input type="hidden" name="refreshVersions" value="true"/>
+        <input type="submit" value="Update version list plx"/>
+</form>
+
 <#if !(message == "")>
     <div>
         ${message}<br/><br/>

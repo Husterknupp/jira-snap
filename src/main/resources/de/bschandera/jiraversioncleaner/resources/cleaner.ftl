@@ -10,8 +10,9 @@
     <b>Configured Components</b>
     <div>
     <#list configuredComponents as component>
-        ${component}
+        - ${component}
     </#list>
+        -
     </div>
 </div>
 <br>

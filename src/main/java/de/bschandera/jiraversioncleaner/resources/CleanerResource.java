@@ -85,10 +85,10 @@ public class CleanerResource {
                 return getCleanerView().withMessage("Ain't no version of this name, dude.");
             }
 
-            java.nio.file.Path jobFileName = JOBS_PATH.resolve(new Date().getTime() + ".json");
+            java.nio.file.Path updateJobName = JOBS_PATH.resolve(new Date().getTime() + ".json");
             Writer writer = null;
             try {
-                writer = Files.newBufferedWriter(jobFileName);
+                writer = Files.newBufferedWriter(updateJobName);
                 version.get().setIsReleased(true);
                 version.get().setReleaseDate(releaseDate);
                 new Gson().toJson(Job.openUpdateJob(version.get()), writer);
@@ -104,38 +104,59 @@ public class CleanerResource {
                 }
             }
             System.out.println("[INFO] created job for version update of " + versionName);
-            System.out.println("[INFO] job name" + jobFileName);
-            message = "Aww yiss!. Please update view.";
-        }
+            System.out.println("[INFO] job name" + updateJobName);
 
-        if (refreshWanted) {
-            boolean updateSuccessful = false;
-            java.nio.file.Path jobFileName = JOBS_PATH.resolve(new Date().getTime() + ".json");
-            Writer writer = Files.newBufferedWriter(jobFileName);
-            new Gson().toJson(Job.openPollingJob(componentsToPollFor), writer);
-            writer.close();
-
-            Job pollJob;
+            Job updateJob;
             int tries = 0;
             do {
-                BufferedReader reader = Files.newBufferedReader(jobFileName);
-                pollJob = new Gson().fromJson(reader, Job.class);
+                BufferedReader reader = Files.newBufferedReader(updateJobName);
+                updateJob = new Gson().fromJson(reader, Job.class);
                 reader.close();
                 tries++;
                 Thread.sleep(500);
-            } while (pollJob.getStatus().equalsIgnoreCase("open") && tries < 20);
-            if (pollJob.getStatus().equals("done")) {
-                System.out.println("[INFO] polling job was done");
-                updateSuccessful = true;
+            } while (updateJob.getStatus().equalsIgnoreCase("open") && tries < 20);
+            if (updateJob.getStatus().equalsIgnoreCase("done")) {
+                System.out.println("[INFO] update job was done");
+            } else if (updateJob.getStatus().equalsIgnoreCase("failed")) {
+                System.out.println("[ERROR] update job " + updateJobName + " failed");
+                return getCleanerView().withMessage("Nope. Version update failed.");
+            } else if (updateJob.getStatus().equalsIgnoreCase("open")) {
+                return getCleanerView().withMessage("Nope. Jira rest standalone not running. Job still open.");
             }
-            if (pollJob.getStatus().equalsIgnoreCase("failed")) {
-                System.out.println("[ERROR] .. but it failed");
-            }
-            if (updateSuccessful) {
-                message += " Refresh was successful.";
+        }
+
+        if (!refreshWanted) {
+            return getCleanerView().withMessage(message);
+        }
+
+        java.nio.file.Path pollJobName = JOBS_PATH.resolve(new Date().getTime() + ".json");
+        Writer writer = Files.newBufferedWriter(pollJobName);
+        new Gson().toJson(Job.openPollingJob(componentsToPollFor), writer);
+        writer.close();
+
+        Job pollJob;
+        int tries = 0;
+        do {
+            BufferedReader reader = Files.newBufferedReader(pollJobName);
+            pollJob = new Gson().fromJson(reader, Job.class);
+            reader.close();
+            tries++;
+            Thread.sleep(500);
+        } while (pollJob.getStatus().equalsIgnoreCase("open") && tries < 20);
+        if (pollJob.getStatus().equalsIgnoreCase("done")) {
+            System.out.println("[INFO] polling job was done");
+            if (versionName == null) {
+                message += message + " Versions are up-to-date.";
+            } else if (readVersionsFromFile().stream()
+                    .filter(v -> v.getName().equalsIgnoreCase(versionName))
+                    .findFirst().isPresent()) {
+                message += message + " Version was not released.";
             } else {
-                message += " Refresh was not successful";
+                message += message + " Aww yiss! Version was released.";
             }
+        } else if (pollJob.getStatus().equalsIgnoreCase("failed")) {
+            System.out.println("[ERROR] poll job " + pollJobName + " failed");
+            message += message + " Version list is not up-to-date.";
         }
 
         return getCleanerView().withMessage(message);

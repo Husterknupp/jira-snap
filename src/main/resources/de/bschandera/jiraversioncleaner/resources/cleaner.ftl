@@ -37,6 +37,7 @@
                 Release Date<br>
                 <input type="text" name="releaseDate" value="e.g., 31.10.2015 10:15:31" size="30"/>
                 <input type="hidden" name="versionName" value="${version.name}"/>
+                <input type="hidden" name="refreshVersions" value="true"/>
                 <br><br>
                 <input type="submit" value="Release za version"/>
             </fieldset>

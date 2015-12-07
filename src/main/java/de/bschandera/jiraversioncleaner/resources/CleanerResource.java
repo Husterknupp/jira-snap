@@ -39,10 +39,10 @@ public class CleanerResource {
     @GET
     public CleanerView getCleanerView() throws InterruptedException, IOException {
         if (Files.exists(VERSIONS_FILE_PATH)) {
-            List<Version> pollingResult = readVersionsFromFile();
+            List<Version> versions = readVersionsFromFile();
             return new CleanerView(componentsToPollFor, componentsToPollFor.stream().collect(Collectors
                     .toMap(Function.<String>identity(),
-                            component -> findVersionsForComponent(component, pollingResult))));
+                            component -> findVersionsForComponent(component, versions))));
         } else {
             return new CleanerView(componentsToPollFor, Collections.emptyMap());
         }
@@ -67,7 +67,6 @@ public class CleanerResource {
                                      @FormParam("releaseDate") String releaseDateString,
                                      @DefaultValue("false") @FormParam("refreshVersions") Boolean refreshWanted)
             throws IOException, InterruptedException {
-        String message = "";
         if (releaseDateString != null && versionName != null) {
             final Date releaseDate;
             try {
@@ -86,80 +85,126 @@ public class CleanerResource {
             }
 
             java.nio.file.Path updateJobName = JOBS_PATH.resolve(new Date().getTime() + ".json");
-            Writer writer = null;
-            try {
-                writer = Files.newBufferedWriter(updateJobName);
-                version.get().setIsReleased(true);
-                version.get().setReleaseDate(releaseDate);
-                new Gson().toJson(Job.openUpdateJob(version.get()), writer);
-            } catch (IOException e) {
-                return getCleanerView().withMessage("I/O made a problem. " + e.getMessage());
-            } finally {
-                try {
-                    if (writer != null) {
-                        writer.close();
-                    }
-                } catch (IOException e) {
-                    System.out.println("[ERROR] " + e.getMessage());
-                }
+            Optional<String> error = putUpdateJob(releaseDate, version.get(), updateJobName);
+            if (error.isPresent()) {
+                return getCleanerView().withMessage(error.get());
             }
-            System.out.println("[INFO] created job for version update of " + versionName);
-            System.out.println("[INFO] job name" + updateJobName);
-
-            Job updateJob;
-            int tries = 0;
-            do {
-                BufferedReader reader = Files.newBufferedReader(updateJobName);
-                updateJob = new Gson().fromJson(reader, Job.class);
-                reader.close();
-                tries++;
-                Thread.sleep(500);
-            } while (updateJob.getStatus().equalsIgnoreCase("open") && tries < 20);
-            if (updateJob.getStatus().equalsIgnoreCase("done")) {
-                System.out.println("[INFO] update job was done");
-            } else if (updateJob.getStatus().equalsIgnoreCase("failed")) {
-                System.out.println("[ERROR] update job " + updateJobName + " failed");
-                return getCleanerView().withMessage("Nope. Version update failed.");
-            } else if (updateJob.getStatus().equalsIgnoreCase("open")) {
-                return getCleanerView().withMessage("Nope. Jira rest standalone not running. Job still open.");
+            error = checkIfUpdateIsDone(updateJobName);
+            if (error.isPresent()) {
+                return getCleanerView().withMessage(error.get());
             }
         }
 
         if (!refreshWanted) {
-            return getCleanerView().withMessage(message);
+            if (releaseDateString != null && versionName != null) {
+                return getCleanerView().withMessage("Update was successful. Please refresh versions.");
+            } else {
+                return getCleanerView();
+            }
         }
 
         java.nio.file.Path pollJobName = JOBS_PATH.resolve(new Date().getTime() + ".json");
-        Writer writer = Files.newBufferedWriter(pollJobName);
-        new Gson().toJson(Job.openPollingJob(componentsToPollFor), writer);
-        writer.close();
+        putPollJob(pollJobName);
 
-        Job pollJob;
-        int tries = 0;
-        do {
-            BufferedReader reader = Files.newBufferedReader(pollJobName);
-            pollJob = new Gson().fromJson(reader, Job.class);
-            reader.close();
-            tries++;
-            Thread.sleep(500);
-        } while (pollJob.getStatus().equalsIgnoreCase("open") && tries < 20);
-        if (pollJob.getStatus().equalsIgnoreCase("done")) {
-            System.out.println("[INFO] polling job was done");
+        Optional<String> error = checkIfPollingIsDone(pollJobName);
+        String message;
+        if (error.isPresent()) {
+            message = error.get();
+        } else {
             if (versionName == null) {
-                message += message + " Versions are up-to-date.";
+                message = "Versions are up-to-date.";
             } else if (readVersionsFromFile().stream()
                     .filter(v -> v.getName().equalsIgnoreCase(versionName))
                     .findFirst().isPresent()) {
-                message += message + " Version was not released.";
+                message = "Version was not released.";
             } else {
-                message += message + " Aww yiss! Version was released.";
+                message = "Aww yiss! Version was released.";
             }
+        }
+        return getCleanerView().withMessage(message);
+    }
+
+    private Optional<String> putUpdateJob(Date releaseDate, Version version, java.nio.file.Path updateJobName)
+            throws InterruptedException, IOException {
+        version.setIsReleased(true);
+        version.setReleaseDate(releaseDate);
+        Job job = Job.openUpdateJob(version);
+        Optional<String> error = writeToJson(updateJobName, job);
+        if (error.isPresent()) {
+            return error;
+        }
+        System.out.println("[INFO] created job for version update of " + version.getName());
+        System.out.println("[INFO] job name" + updateJobName);
+        return Optional.empty();
+    }
+
+    private Optional<String> checkIfUpdateIsDone(java.nio.file.Path updateJobName)
+            throws IOException, InterruptedException {
+        Job updateJob = waitForJobStateChange(updateJobName);
+        if (updateJob.getStatus().equalsIgnoreCase("done")) {
+            System.out.println("[INFO] update job was done");
+            return Optional.empty();
+        } else if (updateJob.getStatus().equalsIgnoreCase("failed")) {
+            System.out.println("[ERROR] update job " + updateJobName + " failed");
+            return Optional.of("Nope. Version update failed.");
+        } else if (updateJob.getStatus().equalsIgnoreCase("open")) {
+            return Optional.of("Nope. Jira rest standalone not running. Job still open.");
+        } else {
+            return Optional.of("Job status not known: " + updateJob.getStatus());
+        }
+    }
+
+    private void putPollJob(java.nio.file.Path pollJobName) throws IOException {
+        Job job = Job.openPollingJob(componentsToPollFor);
+        writeToJson(pollJobName, job);
+    }
+
+    private Optional<String> writeToJson(java.nio.file.Path jobName, Job job) {
+        Writer writer = null;
+        try {
+            writer = Files.newBufferedWriter(jobName);
+            new Gson().toJson(job, writer);
+            return Optional.empty();
+        } catch (IOException e) {
+            return Optional.of("I/O made a problem. " + e.getMessage());
+        } finally {
+            try {
+                if (writer != null) {
+                    writer.close();
+                }
+            } catch (IOException e) {
+                System.out.println("[ERROR] " + e.getMessage());
+            }
+        }
+    }
+
+    private Optional<String> checkIfPollingIsDone(java.nio.file.Path pollJobName)
+            throws IOException, InterruptedException {
+        Job pollJob = waitForJobStateChange(pollJobName);
+        if (pollJob.getStatus().equalsIgnoreCase("done")) {
+            System.out.println("[INFO] polling job was done");
+            return Optional.empty();
         } else if (pollJob.getStatus().equalsIgnoreCase("failed")) {
             System.out.println("[ERROR] poll job " + pollJobName + " failed");
-            message += message + " Version list is not up-to-date.";
+            return Optional.of("Version list is not up-to-date.");
+        } else if (pollJob.getStatus().equalsIgnoreCase("open")) {
+            return Optional.of("Nope. Jira rest standalone not running. Job still open.");
+        } else {
+            return Optional.of("Job status not known: " + pollJob.getStatus());
         }
+    }
 
-        return getCleanerView().withMessage(message);
+    private Job waitForJobStateChange(java.nio.file.Path jobName) throws IOException, InterruptedException {
+        Job job;
+        int tries = 0;
+        do {
+            BufferedReader reader = Files.newBufferedReader(jobName);
+            job = new Gson().fromJson(reader, Job.class);
+            reader.close();
+            tries++;
+            Thread.sleep(500);
+        } while (job.getStatus().equalsIgnoreCase("open") && tries < 30);
+        return job;
     }
 
 }

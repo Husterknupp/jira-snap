@@ -41,14 +41,15 @@ public class Main {
 
     public static void main(String[] args) throws InterruptedException, IOException {
         if (restClient == null) {
+            Optional<String> configFileName = getConfigFileOption(args);
             restClient = password.readFromConsole()
-                    .map(Main::configureRestClient).orElse(null);
+                    .map(pw -> configureRestClient(pw, configFileName)).orElse(null);
             if (restClient == null) {
                 System.out.println("[WARN] No jira rest client configured. The end.");
                 return;
             }
         }
-        if (args.length != 0) {
+        if (args.length != 0 && !args[0].startsWith("-h") && !args[0].startsWith("-c")) {
             System.out.println("[INFO] Test mode. I will execute only one of each job if present.");
             System.out.println("[INFO] Provide no arguments to run in normal mode.");
             pollIfOpen();
@@ -61,10 +62,28 @@ public class Main {
         }
     }
 
-    private static JiraRestClient configureRestClient(String password) {
+    private static Optional<String> getConfigFileOption(String[] args) {
+        if (args.length >= 2 && args[0].startsWith("-c")) {
+            return Optional.of(args[1]);
+        } else if (args.length >= 1 && args[0].startsWith("-h")) {
+            System.out.println("[INFO]\toption -c\tusage:\t-c my-config.json");
+            System.exit(0);
+            return Optional.empty();
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private static JiraRestClient configureRestClient(String password, Optional<String> configFileName) {
         JiraRestClient restClient;
         try {
-            Config config = readConfigFile("config.json");
+            Config config;
+            if (configFileName.isPresent()) {
+                config = readConfigFile(configFileName.get());
+            } else {
+                System.out.println("[INFO] Read configuration from config.json. Provide -c option to specify file");
+                config = readConfigFile("config.json");
+            }
             restClient = new JerseyJiraRestClientFactory()
                     .createWithBasicHttpAuthentication(config.getJiraUrl(), config.getUsername(), password);
         } catch (IOException e) {

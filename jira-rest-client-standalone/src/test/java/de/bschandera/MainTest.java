@@ -9,6 +9,7 @@ import com.atlassian.jira.rest.client.domain.input.VersionInput;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import org.joda.time.DateTime;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -43,6 +44,21 @@ public class MainTest {
     @Before
     public void cleanJobsFolderAndVersionsFile() throws IOException {
         Files.deleteIfExists(ROOT_PATH.resolve("versions.json"));
+        Files.deleteIfExists(ROOT_PATH.resolve("config.json"));
+        Files.list(JOBS_PATH)
+                .forEach(file -> {
+                    try {
+                        Files.delete(file);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                });
+    }
+
+    @AfterClass
+    public static void cleanUpAfterwards() throws IOException {
+        Files.deleteIfExists(ROOT_PATH.resolve("versions.json"));
+        Files.deleteIfExists(ROOT_PATH.resolve("config.json"));
         Files.list(JOBS_PATH)
                 .forEach(file -> {
                     try {
@@ -166,6 +182,7 @@ public class MainTest {
 
     @Test(expected = UncheckedIOException.class)
     public void mainIntegrationTestNoConfigFile() throws IOException, InterruptedException {
+        assertThat("Please remove config.json", Files.exists(ROOT_PATH.resolve("config.json")), is(false));
         Main.main(new String[]{});
     }
 

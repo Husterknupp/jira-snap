@@ -5,7 +5,6 @@ import java.net.URI;
 public class Config {
     private URI jiraUrl;
     private String username;
-    private String password;
 
     public URI getJiraUrl() {
         return jiraUrl;
@@ -23,11 +22,4 @@ public class Config {
         this.username = username;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
 }

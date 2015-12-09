@@ -4,8 +4,7 @@ Tired of waiting long for the versions page of your project? Send $ 14.90 to moc
 ```
 { 
     "jiraUrl": "http://our.jira.net",
-    "username": "john",
-    "password": "secr3t"
+    "username": "john"
 }
 ```
 

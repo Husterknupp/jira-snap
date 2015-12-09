@@ -150,6 +150,20 @@ public class MainTest {
         assertThat(updatedJob.isPresent(), is(true));
     }
 
+    @Test
+    public void testPasswordIsUsed() throws IOException, InterruptedException {
+        Password password = Mockito.mock(Password.class);
+        Mockito.when(password.readFromConsole()).thenReturn(Optional.of("pw"));
+        Main.setPassword(password);
+
+        try {
+            Main.main(new String[]{"test mode"});
+        } catch (UncheckedIOException e) {
+            // expected due to missing config.json - continue with verify
+        }
+        Mockito.verify(password, Mockito.times(1)).readFromConsole();
+    }
+
     @Test(expected = UncheckedIOException.class)
     public void mainIntegrationTestNoConfigFile() throws IOException, InterruptedException {
         Main.main(new String[]{});

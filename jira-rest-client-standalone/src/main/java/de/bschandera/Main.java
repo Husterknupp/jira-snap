@@ -37,10 +37,16 @@ public class Main {
     private static final Path VERSIONS_PATH = Paths.get("versions.json");
 
     private static JiraRestClient restClient;
+    private static Password password = new Password();
 
     public static void main(String[] args) throws InterruptedException, IOException {
         if (restClient == null) {
-            restClient = configureRestClient();
+            restClient = password.readFromConsole()
+                    .map(Main::configureRestClient).orElse(null);
+            if (restClient == null) {
+                System.out.println("[WARN] No jira rest client configured. The end.");
+                return;
+            }
         }
         if (args.length != 0) {
             System.out.println("[INFO] Test mode. I will execute only one of each job if present.");
@@ -53,6 +59,18 @@ public class Main {
             pollIfOpen();
             updateIfOpen();
         }
+    }
+
+    private static JiraRestClient configureRestClient(String password) {
+        JiraRestClient restClient;
+        try {
+            Config config = readConfigFile("config.json");
+            restClient = new JerseyJiraRestClientFactory()
+                    .createWithBasicHttpAuthentication(config.getJiraUrl(), config.getUsername(), password);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return restClient;
     }
 
     private static void updateIfOpen() throws IOException {
@@ -81,18 +99,6 @@ public class Main {
                 return Collections.<Version>emptyList();
             }
         }).ifPresent(writeToFile());
-    }
-
-    private static JiraRestClient configureRestClient() {
-        JiraRestClient restClient;
-        try {
-            Config config = readConfigFile("config.json");
-            restClient = new JerseyJiraRestClientFactory()
-                    .createWithBasicHttpAuthentication(config.getJiraUrl(), config.getUsername(), config.getPassword());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        return restClient;
     }
 
     private static Config readConfigFile(String filePath) throws IOException {
@@ -196,5 +202,9 @@ public class Main {
 
     static void setJiraClient(JiraRestClient client) {
         restClient = client;
+    }
+
+    static void setPassword(Password newPassword) {
+        password = newPassword;
     }
 }

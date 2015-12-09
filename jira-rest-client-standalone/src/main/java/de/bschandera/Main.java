@@ -101,7 +101,7 @@ public class Main {
         }).ifPresent(writeToFile());
     }
 
-    private static Config readConfigFile(String filePath) throws IOException {
+    static Config readConfigFile(String filePath) throws IOException {
         Config config;
         try (BufferedReader reader = Files.newBufferedReader(ROOT_PATH.resolve(filePath))) {
             config = GSON.fromJson(reader, Config.class);

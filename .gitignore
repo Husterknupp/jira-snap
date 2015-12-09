@@ -8,7 +8,6 @@ dependency-reduced-pom.xml
 
 # project specific
 jobs/
-config.json
 versions.json
 *.log
 *.log.gz

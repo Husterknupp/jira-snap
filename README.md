@@ -1,4 +1,4 @@
-h1. JIRA Snap
+# JIRA Snap
 Speed up release function of JIRA versions page by magnitudes. Configure your components, enter credentials and use simple but fast front end for that.
 
 [![Build Status](https://travis-ci.org/Husterknupp/jira-snap.svg)](https://travis-ci.org/Husterknupp/jira-snap)

@@ -1,4 +1,4 @@
-Tired of waiting long for the versions page of your project? Send $ 14.90 to mock@tober.com and use the Jira Version Cleaner right now.
+Tired of waiting long for the versions page of your project? Send $ 14.90 to mock@tober.com and use the Jira Version Cleaner right now. [![Build Status](https://travis-ci.org/Husterknupp/jira-snap.svg)](https://travis-ci.org/Husterknupp/jira-snap)
 
 **config.json**
 ```

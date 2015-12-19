@@ -1,4 +1,7 @@
-Tired of waiting long for the versions page of your project? Send $ 14.90 to mock@tober.com and use the Jira Version Cleaner right now. [![Build Status](https://travis-ci.org/Husterknupp/jira-snap.svg)](https://travis-ci.org/Husterknupp/jira-snap)
+h1. JIRA Snap
+Speed up release function of JIRA versions page by magnitudes. Configure your components, enter credentials and use simple but fast front end for that.
+
+[![Build Status](https://travis-ci.org/Husterknupp/jira-snap.svg)](https://travis-ci.org/Husterknupp/jira-snap)
 
 **config.json**
 ```
@@ -24,7 +27,7 @@ cp target/jira-rest-client-standalone-1.2.0-SNAPSHOT.jar ../
 ```
 cd ..
 mvn clean package
-java -jar jira-rest-client-standalone-1.2.0-SNAPSHOT.jar
+java -jar jira-rest-client-standalone-1.1.0.jar
 java -jar target/jira-version-cleaner-0.1.0-SNAPSHOT.jar server config.json
 ```
 

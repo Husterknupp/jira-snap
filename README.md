@@ -2,6 +2,7 @@
 Speed up release function of JIRA versions page by magnitudes. Configure your components, enter credentials and use simple but fast front end for that.
 
 [![Build Status](https://travis-ci.org/Husterknupp/jira-snap.svg)](https://travis-ci.org/Husterknupp/jira-snap)
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/50dd672ebd914ece960e87f91589fae4)](https://www.codacy.com/app/4-23/jira-snap)
 
 **config.json**
 ```

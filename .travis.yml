@@ -1,6 +1,10 @@
 language: java
 jdk:
   - oraclejdk8
+env:
+  - TEST_DIR=.
+  - TEST_DIR=jira-rest-client-standalone
+script: cd $TEST_DIR && mvn install && mvn test
 cache:
   directories:
   - $HOME/.m2

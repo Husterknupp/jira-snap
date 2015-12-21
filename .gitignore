@@ -5,6 +5,7 @@
 *.jar
 target/
 dependency-reduced-pom.xml
+!lib/com/atlassian/jira/jira-rest-java-client/1.1-m02/*.jar
 
 # project specific
 jobs/

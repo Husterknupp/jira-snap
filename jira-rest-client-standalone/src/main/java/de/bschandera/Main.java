@@ -75,15 +75,13 @@ public class Main {
     }
 
     private static JiraRestClient configureRestClient(String password, Optional<String> configFileName) {
-        Config config;
-        if (configFileName.isPresent()) {
-            config = jsonUtil.readConfigFile(ROOT_PATH.resolve(configFileName.get()));
-        } else {
-            System.out.println("[INFO] Read configuration from config.json. Provide -c option to specify file");
-            config = jsonUtil.readConfigFile(ROOT_PATH.resolve("config.json"));
-        }
-        return new JerseyJiraRestClientFactory()
-                .createWithBasicHttpAuthentication(config.getJiraUrl(), config.getUsername(), password);
+        Config config = jsonUtil.readConfigFile(ROOT_PATH.resolve(configFileName
+                .orElseGet(() -> {
+                    System.out.println("[INFO] Read configuration from config.json. Provide -c option to specify file");
+                    return "config.json";
+                })));
+        return new JerseyJiraRestClientFactory().createWithBasicHttpAuthentication(
+                config.getJiraUrl(), config.getUsername(), password);
     }
 
     private static void updateIfOpen() throws IOException {

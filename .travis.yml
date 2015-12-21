@@ -1,10 +1,13 @@
 language: java
 jdk:
   - oraclejdk8
+before_install:
+  - mvn install:install-file -Dfile=lib/com/atlassian/jira/jira-rest-java-client/1.1-m02/jira-rest-java-client-1.1-m02.jar -DgroupId=com.atlassian.jira -DartifactId=jira-rest-java-client -Dversion=1.1-m02 -Dpackaging=jar -DgeneratePom=true
 env:
   - TEST_DIR=.
   - TEST_DIR=jira-rest-client-standalone
-script: cd $TEST_DIR && mvn install && mvn test
-cache:
+script: 
+  - cd $TEST_DIR && mvn install && mvn test
+cach§e:
   directories:
   - $HOME/.m2

@@ -4,10 +4,12 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 
 public class JsonUtil {
@@ -32,6 +34,13 @@ public class JsonUtil {
     }
 
     public void saveAndUpdateJobState(Job job, String newStatus) {
+        job.setStatus(newStatus);
+        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(job.getPath()))) {
+            GSON.toJson(job, writer);
+            writer.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
 }

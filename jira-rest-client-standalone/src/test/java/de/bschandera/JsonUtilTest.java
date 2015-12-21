@@ -8,27 +8,54 @@ import org.junit.Test;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
 public class JsonUtilTest {
     private static final Path ROOT_PATH = Paths.get(".");
+    private static final Path JOBS_PATH = Paths.get("./jobs");
 
     @Before
     public void cleanJobsFolderAndVersionsFile() throws IOException {
         Files.deleteIfExists(ROOT_PATH.resolve("config.json"));
+        if (Files.exists(JOBS_PATH)) {
+            Files.list(JOBS_PATH)
+                    .forEach(file -> {
+                        try {
+                            Files.delete(file);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    });
+        } else {
+            Files.createDirectory(JOBS_PATH);
+        }
     }
 
     @AfterClass
     public static void cleanUpAfterwards() throws IOException {
         Files.deleteIfExists(ROOT_PATH.resolve("config.json"));
+        if (Files.exists(JOBS_PATH)) {
+            Files.list(JOBS_PATH)
+                    .forEach(file -> {
+                        try {
+                            Files.delete(file);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    });
+            Files.delete(JOBS_PATH);
+        }
     }
 
     @Test
@@ -71,6 +98,20 @@ public class JsonUtilTest {
 
         assertThat(config.getJiraUrl(), equalTo(new URI("http://jira.moep.url")));
         assertThat(config.getUsername(), equalTo("batman"));
+    }
+
+    @Test
+    public void updateJobState() throws IOException {
+        Job job = new Job();
+        job.setStatus("old status");
+        job.setPath("jobs/update-my-status");
+
+        new JsonUtil().saveAndUpdateJobState(job, "new status");
+
+        Optional<String> updatedJob = Files.lines(JOBS_PATH.resolve("update-my-status"))
+                .filter(line -> line.contains("new status"))
+                .findFirst();
+        assertThat(updatedJob.isPresent(), is(true));
     }
 
 }

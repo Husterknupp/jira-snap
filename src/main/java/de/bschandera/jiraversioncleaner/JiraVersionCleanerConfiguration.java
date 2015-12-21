@@ -7,7 +7,7 @@ import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class JiraVersionCleanerConfiguration extends Configuration {
-    List<String> componentsToPollFor;
+    private List<String> componentsToPollFor;
 
     public List<String> getComponentsToPollFor() {
         return componentsToPollFor;

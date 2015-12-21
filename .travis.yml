@@ -9,6 +9,6 @@ env:
   - TEST_DIR=jira-rest-client-standalone
 script: 
   - cd $TEST_DIR && mvn install && mvn test
-cach§e:
+cache:
   directories:
   - $HOME/.m2

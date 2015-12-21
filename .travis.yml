@@ -3,6 +3,7 @@ jdk:
   - oraclejdk8
 before_install:
   - mvn install:install-file -Dfile=lib/com/atlassian/jira/jira-rest-java-client/1.1-m02/jira-rest-java-client-1.1-m02.jar -DgroupId=com.atlassian.jira -DartifactId=jira-rest-java-client -Dversion=1.1-m02 -Dpackaging=jar -DgeneratePom=true
+  - mvn install:install-file -Dfile=lib/com/atlassian/jira/jira-rest-java-client/1.1-m02/jira-rest-java-client-1.1-m02.pom -DgroupId=com.atlassian.jira -DartifactId=jira-rest-java-client -Dversion=1.1-m02 -Dpackaging=pom  
 env:
   - TEST_DIR=.
   - TEST_DIR=jira-rest-client-standalone

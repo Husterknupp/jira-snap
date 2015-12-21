@@ -29,6 +29,7 @@ public class MainTest {
 
     @Before
     public void cleanJobsFolderAndVersionsFile() throws IOException {
+        Files.createDirectory(JOBS_PATH);
         Files.deleteIfExists(ROOT_PATH.resolve("versions.json"));
         Files.deleteIfExists(ROOT_PATH.resolve("config.json"));
         Files.list(JOBS_PATH)

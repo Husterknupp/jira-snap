@@ -2,6 +2,7 @@ package de.bschandera;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
@@ -112,6 +113,89 @@ public class JsonUtilTest {
                 .filter(line -> line.contains("new status"))
                 .findFirst();
         assertThat(updatedJob.isPresent(), is(true));
+    }
+
+    @Test
+    public void testCheckForOpenJobPresent() throws IOException {
+        Job job = new Job();
+        job.setType("poll");
+        job.setStatus("open");
+        BufferedWriter writer = Files.newBufferedWriter(JOBS_PATH.resolve("poll.json"));
+        new Gson().toJson(job, writer);
+        writer.close();
+
+        assertThat(new JsonUtil().checkForOpenJob("poll").isPresent(), is(true));
+    }
+
+    @Test
+    public void testCheckForOpenJobNotPresent() throws IOException {
+        assertThat(new JsonUtil().checkForOpenJob("poll").isPresent(), is(false));
+        Job job = new Job();
+        job.setType("poll");
+        job.setStatus("done");
+        BufferedWriter writer = Files.newBufferedWriter(JOBS_PATH.resolve("poll.json"));
+        new Gson().toJson(job, writer);
+        writer.close();
+
+        assertThat(new JsonUtil().checkForOpenJob("poll").isPresent(), is(false));
+    }
+
+    @Test
+    public void testCheckForOpenJobTypeBad() throws IOException {
+        Job job = new Job();
+        job.setType("bad type");
+        job.setStatus("open");
+        BufferedWriter writer = Files.newBufferedWriter(JOBS_PATH.resolve("poll.json"));
+        new Gson().toJson(job, writer);
+        writer.close();
+
+        assertThat(new JsonUtil().checkForOpenJob("poll").isPresent(), is(false));
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testCheckForOpenJobTypeNull() throws IOException {
+        Job job = new Job();
+        job.setStatus("open");
+        BufferedWriter writer = Files.newBufferedWriter(JOBS_PATH.resolve("poll.json"));
+        new Gson().toJson(job, writer);
+        writer.close();
+
+        assertThat(new JsonUtil().checkForOpenJob("poll").isPresent(), is(false));
+    }
+
+    @Test
+    public void testCheckForOpenJobBadState() throws IOException {
+        assertThat(new JsonUtil().checkForOpenJob("poll").isPresent(), is(false));
+        Job job = new Job();
+        job.setType("poll");
+        job.setStatus("bad state");
+        BufferedWriter writer = Files.newBufferedWriter(JOBS_PATH.resolve("poll.json"));
+        new Gson().toJson(job, writer);
+        writer.close();
+
+        assertThat(new JsonUtil().checkForOpenJob("poll").isPresent(), is(false));
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testCheckForOpenJobStateNull() throws IOException {
+        assertThat(new JsonUtil().checkForOpenJob("poll").isPresent(), is(false));
+        Job job = new Job();
+        job.setType("poll");
+        BufferedWriter writer = Files.newBufferedWriter(JOBS_PATH.resolve("poll.json"));
+        new Gson().toJson(job, writer);
+        writer.close();
+
+        assertThat(new JsonUtil().checkForOpenJob("poll").isPresent(), is(false));
+    }
+
+    @Test(expected = JsonSyntaxException.class)
+    public void testCheckForOpenJobBadJson() throws IOException {
+        assertThat(new JsonUtil().checkForOpenJob("poll").isPresent(), is(false));
+        BufferedWriter writer = Files.newBufferedWriter(JOBS_PATH.resolve("poll.json"));
+        writer.append("trarala no valid json luluu");
+        writer.close();
+
+        assertThat(new JsonUtil().checkForOpenJob("poll").isPresent(), is(false));
     }
 
 }

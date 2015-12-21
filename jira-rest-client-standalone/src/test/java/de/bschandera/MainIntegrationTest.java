@@ -188,7 +188,6 @@ public class MainIntegrationTest {
         Main.main(new String[]{"anyString"});
 
         assertThat(Files.list(JOBS_PATH).count(), is(0l));
-        Files.delete(ROOT_PATH.resolve("config.json"));
     }
 
 }

@@ -9,18 +9,15 @@ import com.atlassian.jira.rest.client.internal.jersey.JerseyJiraRestClientFactor
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.sun.management.UnixOperatingSystemMXBean;
 import org.joda.time.DateTime;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Type;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -85,7 +82,7 @@ public class Main {
     }
 
     private static void updateIfOpen() throws IOException {
-        checkForOpenJob("update").ifPresent(job -> {
+        jsonUtil.checkForOpenJob("update").ifPresent(job -> {
             try {
                 job.getUpdatedVersions().stream().forEach(Main::releaseVersion);
                 jsonUtil.saveAndUpdateJobState(job, "done");
@@ -97,7 +94,7 @@ public class Main {
     }
 
     private static void pollIfOpen() throws IOException {
-        checkForOpenJob("poll").map(job -> {
+        jsonUtil.checkForOpenJob("poll").map(job -> {
             printNoOfOpenFiles();
             System.out.println("[INFO] Get versions for " + job.getComponentsWanted());
             try {
@@ -110,31 +107,6 @@ public class Main {
                 return Collections.<Version>emptyList();
             }
         }).ifPresent(writeToFile());
-    }
-
-    static Optional<Job> checkForOpenJob(String jobType) throws IOException {
-        DirectoryStream<Path> jobFilesStream = Files.newDirectoryStream(ROOT_PATH.resolve("jobs"));
-        Optional<Job> result = Optional.empty();
-        for (Path aJobFilesStream : jobFilesStream) {
-            Job job;
-            try (BufferedReader reader = Files.newBufferedReader(aJobFilesStream)) {
-                job = GSON.fromJson(reader, Job.class);
-                if (job == null) {
-                    continue;
-                }
-            } catch (JsonSyntaxException e) {
-                System.out.println("[ERROR] json syntax problem in file " + aJobFilesStream.toString() + " " + e.getMessage());
-                throw e;
-            }
-            if (job.getStatus().equalsIgnoreCase("open") && job.getType().equalsIgnoreCase(jobType)) {
-                job.setPath(aJobFilesStream.toString());
-                System.out.println("[INFO] found open job: " + jobType + " " + job.getPath());
-                result = Optional.of(job);
-                break;
-            }
-        }
-        jobFilesStream.close();
-        return result;
     }
 
     private static List<Version> getUnreleasedVersions(List<String> components) {

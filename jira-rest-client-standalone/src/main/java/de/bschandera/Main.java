@@ -17,7 +17,6 @@ import org.joda.time.DateTime;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Type;
@@ -38,6 +37,7 @@ public class Main {
 
     private static JiraRestClient restClient;
     private static Password password = new Password();
+    private static JsonUtil jsonUtil = new JsonUtil();
 
     public static void main(String[] args) throws InterruptedException, IOException {
         if (restClient == null) {
@@ -75,21 +75,15 @@ public class Main {
     }
 
     private static JiraRestClient configureRestClient(String password, Optional<String> configFileName) {
-        JiraRestClient restClient;
-        try {
-            Config config;
-            if (configFileName.isPresent()) {
-                config = readConfigFile(configFileName.get());
-            } else {
-                System.out.println("[INFO] Read configuration from config.json. Provide -c option to specify file");
-                config = readConfigFile("config.json");
-            }
-            restClient = new JerseyJiraRestClientFactory()
-                    .createWithBasicHttpAuthentication(config.getJiraUrl(), config.getUsername(), password);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        Config config;
+        if (configFileName.isPresent()) {
+            config = jsonUtil.readConfigFile(ROOT_PATH.resolve(configFileName.get()));
+        } else {
+            System.out.println("[INFO] Read configuration from config.json. Provide -c option to specify file");
+            config = jsonUtil.readConfigFile(ROOT_PATH.resolve("config.json"));
         }
-        return restClient;
+        return new JerseyJiraRestClientFactory()
+                .createWithBasicHttpAuthentication(config.getJiraUrl(), config.getUsername(), password);
     }
 
     private static void updateIfOpen() throws IOException {
@@ -118,17 +112,6 @@ public class Main {
                 return Collections.<Version>emptyList();
             }
         }).ifPresent(writeToFile());
-    }
-
-    static Config readConfigFile(String filePath) throws IOException {
-        Config config;
-        try (BufferedReader reader = Files.newBufferedReader(ROOT_PATH.resolve(filePath))) {
-            config = GSON.fromJson(reader, Config.class);
-        } catch (JsonSyntaxException e) {
-            System.out.println("[ERROR] json syntax problem in file " + filePath + " " + e.getMessage());
-            throw new RuntimeException(e);
-        }
-        return config;
     }
 
     static Optional<Job> checkForOpenJob(String jobType) throws IOException {

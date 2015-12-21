@@ -42,17 +42,20 @@ public class MainIntegrationTest {
 
     @Before
     public void cleanJobsFolderAndVersionsFile() throws IOException {
-        Files.createDirectory(JOBS_PATH);
         Files.deleteIfExists(ROOT_PATH.resolve("versions.json"));
         Files.deleteIfExists(ROOT_PATH.resolve("config.json"));
-        Files.list(JOBS_PATH)
-                .forEach(file -> {
-                    try {
-                        Files.delete(file);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                });
+        if (Files.exists(JOBS_PATH)) {
+            Files.list(JOBS_PATH)
+                    .forEach(file -> {
+                        try {
+                            Files.delete(file);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    });
+            Files.delete(JOBS_PATH);
+        }
+        Files.createDirectory(JOBS_PATH);
         Main.setJiraClient(null);
         Main.setPassword(new Password());
     }
@@ -61,14 +64,17 @@ public class MainIntegrationTest {
     public static void cleanUpAfterwards() throws IOException {
         Files.deleteIfExists(ROOT_PATH.resolve("versions.json"));
         Files.deleteIfExists(ROOT_PATH.resolve("config.json"));
-        Files.list(JOBS_PATH)
-                .forEach(file -> {
-                    try {
-                        Files.delete(file);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                });
+        if (Files.exists(JOBS_PATH)) {
+            Files.list(JOBS_PATH)
+                    .forEach(file -> {
+                        try {
+                            Files.delete(file);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    });
+            Files.delete(JOBS_PATH);
+        }
     }
 
     @Test

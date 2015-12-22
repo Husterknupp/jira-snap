@@ -1,5 +1,6 @@
 package de.bschandera;
 
+import junit.framework.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -18,6 +19,7 @@ public class MainTest {
 
         try {
             Main.main(new String[]{"test mode"});
+            Assert.fail("Password read method should have been called");
         } catch (UncheckedIOException e) {
             // expected due to missing config.json - continue with verify
         }

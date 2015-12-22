@@ -6,6 +6,7 @@ import com.atlassian.jira.rest.client.ProjectRestClient;
 import com.atlassian.jira.rest.client.domain.Project;
 import com.atlassian.jira.rest.client.domain.input.VersionInput;
 import com.atlassian.jira.rest.client.internal.jersey.JerseyJiraRestClientFactory;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -15,6 +16,7 @@ import org.joda.time.DateTime;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Type;
@@ -38,6 +40,10 @@ public class Main {
 
     public static void main(String[] args) throws InterruptedException, IOException {
         if (restClient == null) {
+            if (args.length >= 1 && args[0].startsWith("-h")) {
+                System.out.println("[INFO]\toption -c\tusage:\t-c my-config.json");
+                return;
+            }
             Optional<String> configFileName = getConfigFileOption(args);
             restClient = password.readFromConsole()
                     .map(pw -> configureRestClient(pw, configFileName)).orElse(null);
@@ -62,10 +68,6 @@ public class Main {
     private static Optional<String> getConfigFileOption(String[] args) {
         if (args.length >= 2 && args[0].startsWith("-c")) {
             return Optional.of(args[1]);
-        } else if (args.length >= 1 && args[0].startsWith("-h")) {
-            System.out.println("[INFO]\toption -c\tusage:\t-c my-config.json");
-            System.exit(0);
-            return Optional.empty();
         } else {
             return Optional.empty();
         }
@@ -142,7 +144,7 @@ public class Main {
                 writer.close();
                 System.out.println("[INFO] Found " + versions.size() + " unreleased versions. Put them in " + VERSIONS_PATH);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new UncheckedIOException(e);
             }
         };
     }
@@ -161,11 +163,13 @@ public class Main {
         }
     }
 
-    static void setJiraClient(JiraRestClient client) {
+    @VisibleForTesting
+    protected static void setJiraClient(JiraRestClient client) {
         restClient = client;
     }
 
-    static void setPassword(Password newPassword) {
+    @VisibleForTesting
+    protected static void setPassword(Password newPassword) {
         password = newPassword;
     }
 }
